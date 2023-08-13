@@ -3,6 +3,8 @@ package hz.github.transfer;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class TransferClient {
@@ -33,16 +35,19 @@ public class TransferClient {
     private static void handle(InputStream inputStream, OutputStream outputStream) throws IOException {
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        BufferedReader charReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        BufferedInputStream reader = new BufferedInputStream(inputStream);
 
-        System.out.println("[server] " + reader.readLine());
+//        System.out.println("[server] " + reader.read());
 
 
         System.out.println("Sending request for " + fileName);
         writer.write(fileName);
         writer.newLine();
         writer.flush();
-        String respHeader = reader.readLine();
+
+
+        String respHeader = charReader.readLine();
         if (respHeader.startsWith("Error:")) {
             System.out.println(respHeader);
         }
@@ -58,18 +63,23 @@ public class TransferClient {
             }
         }
 
-        int bufferSize = 256;
-        char[] charBuffer = new char[bufferSize];
+        System.out.println("file size: " + fileSize);
 
-        try (Writer fileWriter = new FileWriter("files/client/" + fileName)) {
+        int bufferSize = 256;
+        byte[] byteBuffer = new byte[bufferSize];
+
+        try (OutputStream fileWriter = Files.newOutputStream(Paths.get("files/client/" + fileName))) {
             while (fileSize > 0) {
                 int readSize = Math.min(bufferSize, fileSize);
-                reader.read(charBuffer, 0, readSize);
-                fileWriter.write(charBuffer, 0, readSize);
+                readSize = reader.read(byteBuffer, 0, readSize);
+                fileWriter.write(byteBuffer, 0, readSize);
                 fileSize -= readSize;
             }
         }
 
+        System.out.println("Out of transfer");
+        String respTail = charReader.readLine();
+        System.out.println(respTail);
         System.out.println("Transfer completed!");
     }
 

@@ -24,20 +24,22 @@ public class TransferServer {
             } catch (Exception e) {
 
             }
+            clientSocket.close();
             System.out.println("Client disconnected.");
         }
     }
 
     private static void handle(InputStream inputStream, OutputStream outputStream) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-        writer.write("Hello! I'm server\n");
-        writer.flush();
+//        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+        BufferedOutputStream writer = new BufferedOutputStream(outputStream);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+//        writer.write("Hello! I'm server\n".getBytes());
+//        writer.flush();
 
         while (true) {
             String s = reader.readLine();
             if (s.equals("bye")) {
-                writer.write("bye\n");
+                writer.write("bye\n".getBytes());
                 writer.flush();
                 break;
             }
@@ -46,7 +48,7 @@ public class TransferServer {
 
             if (!file.exists() || !file.isFile()) {
                 System.out.println("Error: File does not exist!\n");
-                writer.write("Error: File does not exist!\n");
+                writer.write("Error: File does not exist!\n".getBytes());
                 writer.flush();
                 break;
             }
@@ -55,24 +57,27 @@ public class TransferServer {
 
             long fileSize = file.length();
 
-            writer.write("size:" + fileSize);
-            writer.newLine();
+            writer.write(("size:" + fileSize).getBytes());
+            writer.write("\n".getBytes());
             writer.flush();
 
-            FileReader fileReader = new FileReader("files/server/" + s);
+//            FileReader fileReader = new FileReader("files/server/" + s);
+            InputStream fileInput = new FileInputStream("files/server/" + s);
 
             int bufferSize = 256;
-            char[] charBuffer = new char[bufferSize];
+            byte[] byteBuffer = new byte[bufferSize];
 
             while (fileSize > 0) {
+                System.out.println(fileSize);
                 int readSize = (int) Math.min(bufferSize, fileSize);
-                fileReader.read(charBuffer, 0, readSize);
-                System.out.println(charBuffer);
-                writer.write(charBuffer, 0, readSize);
+                readSize = fileInput.read(byteBuffer, 0, readSize);
+                writer.write(byteBuffer, 0, readSize);
+                writer.flush();
                 fileSize -= readSize;
             }
 
-            writer.write("OK: " + s + "has been sent\n");
+            writer.write(("OK: " + s + " has been sent\n").getBytes());
+            writer.write("\n".getBytes());
             writer.flush();
         }
 
