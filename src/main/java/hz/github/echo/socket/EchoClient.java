@@ -1,4 +1,4 @@
-package hz.github.echo;
+package hz.github.echo.socket;
 
 import java.io.*;
 import java.net.Socket;
